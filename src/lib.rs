@@ -52,8 +52,31 @@
 //!     Err(e) => println!("Error: {}", e)
 //! }
 //! ```
+//!
+//! ## Example of using pango formatted strings
+//! `rofi` can display pango format. Here is a simple example (you have to call
+//! the `self..pango` function).
+//!
+//! ```
+//! use rofi;
+//! use rofi::pango::{Pango, FontSize};
+//! use std::{fs, env};
+//!
+//! let entries: Vec<String> = vec![
+//!     Pango::new("Option 1").size(FontSize::Small).fg_color("#666000").build(),
+//!     Pango::new("Option 2").size(FontSize::Large).fg_color("#deadbe").build(),
+//! ];
+//!
+//! match rofi::Rofi::new(&entries).pango().run() {
+//!     Ok(element) => println!("Choice: {}", element),
+//!     Err(rofi::Error::Interrupted) => println!("Interrupted"),
+//!     Err(e) => println!("Error: {}", e)
+//! }
+//! ```
 
 #![deny(missing_docs, missing_debug_implementations, rust_2018_idioms)]
+
+pub mod pango;
 
 use std::process::{Command, Stdio, Child};
 use thiserror::Error;
