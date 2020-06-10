@@ -96,6 +96,7 @@ where
     elements: &'a Vec<T>,
     case_sensitive: bool,
     lines: Option<usize>,
+    width: Width,
     format: Format,
     args: Vec<String>,
 }
@@ -178,6 +179,7 @@ where
             elements,
             case_sensitive: false,
             lines: None,
+            width: Width::None,
             format: Format::Text,
             args: Vec::new()
         }
@@ -213,6 +215,13 @@ where
     pub fn lines(&mut self, l: usize) -> &mut Self {
         self.lines = Some(l);
         self
+    }
+
+    /// Set the width of the window (overwrite the theme settings)
+    pub fn width(&mut self, w: Width) -> Result<&mut Self, Error> {
+        w.check()?;
+        self.width = w;
+        Ok(self)
     }
 
     /// Sets the case sensitivity (disabled by default)
@@ -275,6 +284,12 @@ where
                 true => "-case-sensitive",
                 false => "-i"
             })
+            .args(match self.width {
+                Width::None => vec![],
+                Width::Percentage(x) => vec!["-width".to_string(), format!("{}", x)],
+                Width::Pixels(x) => vec!["-width".to_string(), format!("{}", x)],
+                Width::Characters(x) => vec!["-width".to_string(), format!("-{}", x)],
+            })
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -289,6 +304,33 @@ where
         Ok(child)
     }
 
+}
+
+/// Width of the rofi window to overwrite the default width from the rogi theme.
+#[derive(Debug)]
+pub enum Width {
+    /// No width specified, use the default one from the theme
+    None,
+    /// Width in percentage of the screen, must be between 0 and 100
+    Percentage(usize),
+    /// Width in pixels, must be greater than 100
+    Pixels(usize),
+    /// Estimates the width based on the number of characters.
+    Characters(usize)
+}
+
+impl Width {
+    fn check(&self) -> Result<(), Error> {
+        match self {
+            Self::Percentage(x) => {
+                if *x > 100 {Err(Error::InvalidWidth("Percentage must be between 0 and 100"))} else {Ok(())}
+            },
+            Self::Pixels(x) => {
+                if *x <= 100 {Err(Error::InvalidWidth("Pixels must be larger than 100"))} else {Ok(())}
+            }
+            _ => Ok(())
+        }
+    }
 }
 
 /// Different modes, how rofi should return the results
@@ -331,6 +373,9 @@ pub enum Error {
     /// Error returned when the user chose a blank option
     #[error("User chose a blank line")]
     Blank,
+    /// Error returned the width is invalid, only returned in Rofi::width()
+    #[error("Invalid width: {0}")]
+    InvalidWidth(&'static str),
     /// Error, when the input of the user is not found. This only occurs when
     /// getting the index.
     #[error("User input was not found")]
@@ -352,7 +397,10 @@ mod rofitest {
             Ok(ret) => assert!(ret == 2),
             _ => assert!(false)
         }
-        match Rofi::new(&options).prompt("press escape").run_index() {
+        match Rofi::new(&options)
+            .prompt("press escape")
+            .width(Width::Percentage(15)).unwrap()
+            .run_index() {
             Err(Error::Interrupted) => assert!(true),
             _ => assert!(false)
         }
