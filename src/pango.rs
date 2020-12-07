@@ -348,7 +348,7 @@ impl<'a> Pango<'a> {
     }
 
     fn to_string_with_content(&self, content: &str) -> String {
-        if self.options.len() == 0 {
+        if self.options.is_empty() {
             content.to_string()
         } else {
             format!(
@@ -474,7 +474,7 @@ pub enum Underline {
 
 impl<'a> fmt::Display for Pango<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.options.len() == 0 {
+        if self.options.is_empty() {
             write!(f, "{}", self.content)
         } else {
             write!(f, "<span")?;

@@ -93,7 +93,7 @@ pub struct Rofi<'a, T>
 where
     T: AsRef<str>,
 {
-    elements: &'a Vec<T>,
+    elements: &'a [T],
     case_sensitive: bool,
     lines: Option<usize>,
     width: Width,
@@ -133,7 +133,7 @@ impl RofiChild<String> {
             if buffer.ends_with('\n') {
                 buffer.pop();
             }
-            if buffer.len() == 0 {
+            if buffer.is_empty() {
                 Err(Error::Blank {})
             } else {
                 Ok(buffer)
@@ -156,7 +156,7 @@ impl RofiChild<usize> {
             if buffer.ends_with('\n') {
                 buffer.pop();
             }
-            if buffer.len() == 0 {
+            if buffer.is_empty() {
                 Err(Error::Blank {})
             } else {
                 let idx: isize = buffer.parse::<isize>()?;
@@ -177,7 +177,7 @@ where
     T: AsRef<str>,
 {
     /// Generate a new, unconfigured Rofi window based on the elements provided.
-    pub fn new(elements: &'a Vec<T>) -> Self {
+    pub fn new(elements: &'a [T]) -> Self {
         Self {
             elements,
             case_sensitive: false,
@@ -301,7 +301,7 @@ where
         if let Some(mut writer) = child.stdin.take() {
             for element in self.elements {
                 writer.write_all(element.as_ref().as_bytes())?;
-                writer.write(b"\n")?;
+                writer.write_all(b"\n")?;
             }
         }
         Ok(child)
