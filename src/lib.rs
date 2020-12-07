@@ -78,9 +78,9 @@
 
 pub mod pango;
 
-use std::process::{Command, Stdio, Child};
-use thiserror::Error;
 use std::io::{Read, Write};
+use std::process::{Child, Command, Stdio};
+use thiserror::Error;
 
 /// # Rofi Window Builder
 /// Rofi struct for displaying user interfaces. This struct is build after the
@@ -91,9 +91,9 @@ use std::io::{Read, Write};
 #[derive(Debug)]
 pub struct Rofi<'a, T>
 where
-    T: AsRef<str>
+    T: AsRef<str>,
 {
-    elements: &'a Vec<T>,
+    elements: &'a [T],
     case_sensitive: bool,
     lines: Option<usize>,
     width: Width,
@@ -110,7 +110,10 @@ pub struct RofiChild<T> {
 
 impl<T> RofiChild<T> {
     fn new(p: Child, arg: T) -> Self {
-        Self{num_elements: arg, p}
+        Self {
+            num_elements: arg,
+            p,
+        }
     }
     /// Kill the Rofi process
     pub fn kill(&mut self) -> Result<(), Error> {
@@ -130,13 +133,13 @@ impl RofiChild<String> {
             if buffer.ends_with('\n') {
                 buffer.pop();
             }
-            if buffer.len() == 0 {
-                Err(Error::Blank{})
+            if buffer.is_empty() {
+                Err(Error::Blank {})
             } else {
                 Ok(buffer)
             }
         } else {
-            Err(Error::Interrupted{})
+            Err(Error::Interrupted {})
         }
     }
 }
@@ -153,35 +156,35 @@ impl RofiChild<usize> {
             if buffer.ends_with('\n') {
                 buffer.pop();
             }
-            if buffer.len() == 0 {
-                Err(Error::Blank{})
+            if buffer.is_empty() {
+                Err(Error::Blank {})
             } else {
                 let idx: isize = buffer.parse::<isize>()?;
                 if idx < 0 || idx > self.num_elements as isize {
-                    Err(Error::NotFound{})
+                    Err(Error::NotFound {})
                 } else {
                     Ok(idx as usize)
                 }
             }
         } else {
-            Err(Error::Interrupted{})
+            Err(Error::Interrupted {})
         }
     }
 }
 
 impl<'a, T> Rofi<'a, T>
 where
-    T: AsRef<str>
+    T: AsRef<str>,
 {
     /// Generate a new, unconfigured Rofi window based on the elements provided.
-    pub fn new(elements: &'a Vec<T>) -> Self {
+    pub fn new(elements: &'a [T]) -> Self {
         Self {
             elements,
             case_sensitive: false,
             lines: None,
             width: Width::None,
             format: Format::Text,
-            args: Vec::new()
+            args: Vec::new(),
         }
     }
 
@@ -278,11 +281,11 @@ where
             .arg("-lines")
             .arg(match self.lines.as_ref() {
                 Some(s) => format!("{}", s),
-                None => format!("{}", self.elements.len())
+                None => format!("{}", self.elements.len()),
             })
             .arg(match self.case_sensitive {
                 true => "-case-sensitive",
-                false => "-i"
+                false => "-i",
             })
             .args(match self.width {
                 Width::None => vec![],
@@ -298,12 +301,11 @@ where
         if let Some(mut writer) = child.stdin.take() {
             for element in self.elements {
                 writer.write_all(element.as_ref().as_bytes())?;
-                writer.write(b"\n")?;
+                writer.write_all(b"\n")?;
             }
         }
         Ok(child)
     }
-
 }
 
 /// Width of the rofi window to overwrite the default width from the rogi theme.
@@ -316,19 +318,27 @@ pub enum Width {
     /// Width in pixels, must be greater than 100
     Pixels(usize),
     /// Estimates the width based on the number of characters.
-    Characters(usize)
+    Characters(usize),
 }
 
 impl Width {
     fn check(&self) -> Result<(), Error> {
         match self {
             Self::Percentage(x) => {
-                if *x > 100 {Err(Error::InvalidWidth("Percentage must be between 0 and 100"))} else {Ok(())}
-            },
-            Self::Pixels(x) => {
-                if *x <= 100 {Err(Error::InvalidWidth("Pixels must be larger than 100"))} else {Ok(())}
+                if *x > 100 {
+                    Err(Error::InvalidWidth("Percentage must be between 0 and 100"))
+                } else {
+                    Ok(())
+                }
             }
-            _ => Ok(())
+            Self::Pixels(x) => {
+                if *x <= 100 {
+                    Err(Error::InvalidWidth("Pixels must be larger than 100"))
+                } else {
+                    Ok(())
+                }
+            }
+            _ => Ok(()),
         }
     }
 }
@@ -344,7 +354,7 @@ pub enum Format {
     /// Text with the exact user input
     UserInput,
     /// Index of the chosen element
-    Index
+    Index,
 }
 
 impl Format {
@@ -379,7 +389,7 @@ pub enum Error {
     /// Error, when the input of the user is not found. This only occurs when
     /// getting the index.
     #[error("User input was not found")]
-    NotFound
+    NotFound,
 }
 
 #[cfg(test)]
@@ -391,30 +401,36 @@ mod rofitest {
         let empty_options: Vec<String> = Vec::new();
         match Rofi::new(&options).prompt("choose c").run() {
             Ok(ret) => assert!(ret == "c"),
-            _ => assert!(false)
+            _ => assert!(false),
         }
         match Rofi::new(&options).prompt("chose c").run_index() {
             Ok(ret) => assert!(ret == 2),
-            _ => assert!(false)
+            _ => assert!(false),
         }
         match Rofi::new(&options)
             .prompt("press escape")
-            .width(Width::Percentage(15)).unwrap()
-            .run_index() {
+            .width(Width::Percentage(15))
+            .unwrap()
+            .run_index()
+        {
             Err(Error::Interrupted) => assert!(true),
-            _ => assert!(false)
+            _ => assert!(false),
         }
-        match Rofi::new(&options).prompt("Enter something wrong").run_index() {
+        match Rofi::new(&options)
+            .prompt("Enter something wrong")
+            .run_index()
+        {
             Err(Error::NotFound) => assert!(true),
-            _ => assert!(false)
+            _ => assert!(false),
         }
         match Rofi::new(&empty_options)
             .prompt("Enter password")
             .password()
             .return_format(Format::UserInput)
-            .run() {
+            .run()
+        {
             Ok(ret) => assert!(ret == "password"),
-            _ => assert!(false)
+            _ => assert!(false),
         }
     }
 }

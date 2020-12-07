@@ -15,14 +15,14 @@
 //! Pango markup language support
 //! https://developer.gnome.org/pygtk/stable/pango-markup-language.html
 
-use std::fmt;
 use std::collections::HashMap;
+use std::fmt;
 
 /// Structure for writing Pango markup spans
 #[derive(Debug)]
 pub struct Pango<'a> {
     content: &'a str,
-    options: HashMap<&'static str, &'a str>
+    options: HashMap<&'static str, &'a str>,
 }
 
 impl<'a> Pango<'a> {
@@ -38,7 +38,7 @@ impl<'a> Pango<'a> {
     pub fn new(content: &'a str) -> Pango<'_> {
         Pango {
             content,
-            options: HashMap::new()
+            options: HashMap::new(),
         }
     }
 
@@ -54,7 +54,7 @@ impl<'a> Pango<'a> {
     pub fn with_capacity(content: &'a str, size: usize) -> Pango<'_> {
         Pango {
             content,
-            options: HashMap::with_capacity(size)
+            options: HashMap::with_capacity(size),
         }
     }
 
@@ -119,12 +119,15 @@ impl<'a> Pango<'a> {
     /// assert_eq!(t, "<span face='monospace'>test</span>");
     /// ```
     pub fn font_family(&mut self, family: FontFamily) -> &mut Self {
-        self.options.insert("face", match family {
-            FontFamily::Normal => "normal",
-            FontFamily::Sans => "sans",
-            FontFamily::Serif => "serif",
-            FontFamily::Monospace => "monospace"
-        });
+        self.options.insert(
+            "face",
+            match family {
+                FontFamily::Normal => "normal",
+                FontFamily::Sans => "sans",
+                FontFamily::Serif => "serif",
+                FontFamily::Monospace => "monospace",
+            },
+        );
         self
     }
 
@@ -140,17 +143,20 @@ impl<'a> Pango<'a> {
     /// assert_eq!(t, "<span size='x-large'>test</span>");
     /// ```
     pub fn size(&mut self, size: FontSize) -> &mut Self {
-        self.options.insert("size", match size {
-            FontSize::VeryTiny => "xx-small",
-            FontSize::Tiny => "x-small",
-            FontSize::Small => "small",
-            FontSize::Normal => "medium",
-            FontSize::Large => "large",
-            FontSize::Huge => "x-large",
-            FontSize::VeryHuge => "xx-large",
-            FontSize::Smaller => "smaller",
-            FontSize::Larger => "larger"
-        });
+        self.options.insert(
+            "size",
+            match size {
+                FontSize::VeryTiny => "xx-small",
+                FontSize::Tiny => "x-small",
+                FontSize::Small => "small",
+                FontSize::Normal => "medium",
+                FontSize::Large => "large",
+                FontSize::Huge => "x-large",
+                FontSize::VeryHuge => "xx-large",
+                FontSize::Smaller => "smaller",
+                FontSize::Larger => "larger",
+            },
+        );
         self
     }
 
@@ -166,11 +172,14 @@ impl<'a> Pango<'a> {
     /// assert_eq!(t, "<span style='oblique'>test</span>");
     /// ```
     pub fn slant_style(&mut self, style: SlantStyle) -> &mut Self {
-        self.options.insert("style", match style {
-            SlantStyle::Normal => "normal",
-            SlantStyle::Oblique => "oblique",
-            SlantStyle::Italic => "italic"
-        });
+        self.options.insert(
+            "style",
+            match style {
+                SlantStyle::Normal => "normal",
+                SlantStyle::Oblique => "oblique",
+                SlantStyle::Italic => "italic",
+            },
+        );
         self
     }
 
@@ -186,18 +195,21 @@ impl<'a> Pango<'a> {
     /// assert_eq!(t, "<span weight='bold'>test</span>");
     /// ```
     pub fn weight(&mut self, weight: Weight) -> &mut Self {
-        self.options.insert("weight", match weight {
-            Weight::Thin => "100",
-            Weight::UltraLight => "ultralight",
-            Weight::Light => "light",
-            Weight::Normal => "normal",
-            Weight::Medium => "500",
-            Weight::SemiBold => "600",
-            Weight::Bold => "bold",
-            Weight::UltraBold => "ultrabold",
-            Weight::Heavy => "heavy",
-            Weight::UltraHeavy => "1000"
-        });
+        self.options.insert(
+            "weight",
+            match weight {
+                Weight::Thin => "100",
+                Weight::UltraLight => "ultralight",
+                Weight::Light => "light",
+                Weight::Normal => "normal",
+                Weight::Medium => "500",
+                Weight::SemiBold => "600",
+                Weight::Bold => "bold",
+                Weight::UltraBold => "ultrabold",
+                Weight::Heavy => "heavy",
+                Weight::UltraHeavy => "1000",
+            },
+        );
         self
     }
 
@@ -246,17 +258,20 @@ impl<'a> Pango<'a> {
     /// assert_eq!(t, "<span stretch='condensed'>test</span>");
     /// ```
     pub fn stretch(&mut self, stretch: FontStretch) -> &mut Self {
-        self.options.insert("stretch", match stretch {
-            FontStretch::UltraCondensed => "ultracondensed",
-            FontStretch::ExtraCondensed => "extracondensed",
-            FontStretch::Condensed => "condensed",
-            FontStretch::SemiCondensed => "semicondensed",
-            FontStretch::Normal => "normal",
-            FontStretch::SemiExpanded => "semiexpanded",
-            FontStretch::Expanded => "expanded",
-            FontStretch::ExtraExpanded => "extraexpanded",
-            FontStretch::UltraExpanded => "ultraexpanded"
-        });
+        self.options.insert(
+            "stretch",
+            match stretch {
+                FontStretch::UltraCondensed => "ultracondensed",
+                FontStretch::ExtraCondensed => "extracondensed",
+                FontStretch::Condensed => "condensed",
+                FontStretch::SemiCondensed => "semicondensed",
+                FontStretch::Normal => "normal",
+                FontStretch::SemiExpanded => "semiexpanded",
+                FontStretch::Expanded => "expanded",
+                FontStretch::ExtraExpanded => "extraexpanded",
+                FontStretch::UltraExpanded => "ultraexpanded",
+            },
+        );
         self
     }
 
@@ -304,12 +319,15 @@ impl<'a> Pango<'a> {
     /// assert_eq!(t, "<span underline='double'>test</span>");
     /// ```
     pub fn underline(&mut self, underline: Underline) -> &mut Self {
-        self.options.insert("underline", match underline {
-            Underline::None => "none",
-            Underline::Single => "single",
-            Underline::Double => "double",
-            Underline::Low => "low"
-        });
+        self.options.insert(
+            "underline",
+            match underline {
+                Underline::None => "none",
+                Underline::Single => "single",
+                Underline::Double => "double",
+                Underline::Low => "low",
+            },
+        );
         self
     }
 
@@ -330,12 +348,17 @@ impl<'a> Pango<'a> {
     }
 
     fn to_string_with_content(&self, content: &str) -> String {
-        if self.options.len() == 0 {
+        if self.options.is_empty() {
             content.to_string()
         } else {
-            format!("<span {}>{}</span>",
-                    self.options.iter().map(|(k, v)| format!("{}='{}'", k, v)).collect::<Vec<String>>().join(" "),
-                    content
+            format!(
+                "<span {}>{}</span>",
+                self.options
+                    .iter()
+                    .map(|(k, v)| format!("{}='{}'", k, v))
+                    .collect::<Vec<String>>()
+                    .join(" "),
+                content
             )
         }
     }
@@ -351,9 +374,8 @@ pub enum FontFamily {
     /// Font including serif
     Serif,
     /// Monospaced font
-    Monospace
+    Monospace,
 }
-
 
 /// Enumeration over all avaliable font sizes
 #[derive(Debug)]
@@ -375,7 +397,7 @@ pub enum FontSize {
     /// Relative font size, makes content smaller than the parent
     Smaller,
     /// Relative font size, makes content larger than the parent
-    Larger
+    Larger,
 }
 
 /// Enumeration over all possible slant styles
@@ -386,7 +408,7 @@ pub enum SlantStyle {
     /// Oblique, normal font skewed
     Oblique,
     /// Italic font, (different face)
-    Italic
+    Italic,
 }
 
 /// Enumeration over all possible weights
@@ -434,7 +456,7 @@ pub enum FontStretch {
     /// ExtraExpanded, letters very far apart
     ExtraExpanded,
     /// UltraExpanded, letters extremely far apart
-    UltraExpanded
+    UltraExpanded,
 }
 
 /// enumeration over all possible underline modes
@@ -447,12 +469,12 @@ pub enum Underline {
     /// Double
     Double,
     /// Low, only the lower line of double is drawn
-    Low
+    Low,
 }
 
 impl<'a> fmt::Display for Pango<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.options.len() == 0 {
+        if self.options.is_empty() {
             write!(f, "{}", self.content)
         } else {
             write!(f, "<span")?;
