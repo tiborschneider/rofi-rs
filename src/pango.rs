@@ -75,6 +75,22 @@ impl<'a> Pango<'a> {
         self.to_string()
     }
 
+    /// Generates a pango string based on the options, but with a different
+    /// content.
+    ///
+    /// ```
+    /// use rofi::pango;
+    /// let mut p = pango::Pango::new("");
+    /// p.slant_style(pango::SlantStyle::Italic);
+    /// p.size(pango::FontSize::Small);
+    /// let t = p.build_content("test");
+    /// assert!(t == "<span style='italic' size='small'>test</span>" ||
+    ///         t == "<span size='small' style='italic'>test</span>");
+    /// ```
+    pub fn build_content(&self, content: &str) -> String {
+        self.to_string_with_content(content)
+    }
+
     /// Set the font
     ///
     /// # Usage
@@ -311,6 +327,17 @@ impl<'a> Pango<'a> {
     pub fn strike_through(&mut self) -> &mut Self {
         self.options.insert("strikethrough", "true");
         self
+    }
+
+    fn to_string_with_content(&self, content: &str) -> String {
+        if self.options.len() == 0 {
+            content.to_string()
+        } else {
+            format!("<span {}>{}</span>",
+                    self.options.iter().map(|(k, v)| format!("{}='{}'", k, v)).collect::<Vec<String>>().join(" "),
+                    content
+            )
+        }
     }
 }
 
