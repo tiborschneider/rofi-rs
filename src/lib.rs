@@ -96,6 +96,7 @@ where
     elements: &'a [T],
     case_sensitive: bool,
     lines: Option<usize>,
+    message: Option<String>,
     width: Width,
     format: Format,
     args: Vec<String>,
@@ -185,6 +186,7 @@ where
             width: Width::None,
             format: Format::Text,
             args: Vec::new(),
+            message: None,
         }
     }
 
@@ -212,8 +214,17 @@ where
         self
     }
 
+    /// enable message dialog mode (-e)
+    pub fn message_only(&mut self, message: impl Into<String>) -> Result<&mut Self, Error> {
+        if !self.elements.is_empty() {
+            return Err(Error::ConfigErrorMessageAndOptions);
+        }
+        self.message = Some(message.into());
+        Ok(self)
+    }
+
     /// Sets the number of lines.
-    /// If this funciton is not called, use the number of lines provided in the
+    /// If this function is not called, use the number of lines provided in the
     /// elements vector.
     pub fn lines(&mut self, l: usize) -> &mut Self {
         self.lines = Some(l);
@@ -274,7 +285,10 @@ where
 
     fn spawn_child(&self) -> Result<Child, std::io::Error> {
         let mut child = Command::new("rofi")
-            .arg("-dmenu")
+            .args(match &self.message {
+                Some(msg) => vec!["-e", msg],
+                None => vec!["-dmenu"],
+            })
             .args(&self.args)
             .arg("-format")
             .arg(self.format.as_arg())
@@ -304,7 +318,20 @@ where
                 writer.write_all(b"\n")?;
             }
         }
+
         Ok(child)
+    }
+}
+
+static EMPTY_OPTIONS: Vec<String> = vec![];
+
+impl<'a> Rofi<'a, String> {
+    /// Generate a new, Rofi window in "message only" mode with the given message.
+    pub fn new_message(message: impl Into<String>) -> Self {
+        let mut rofi = Self::new(&EMPTY_OPTIONS);
+        rofi.message_only(message)
+            .expect("Invariant: provided empty options so it is safe to unwrap message_only");
+        rofi
     }
 }
 
@@ -390,6 +417,9 @@ pub enum Error {
     /// getting the index.
     #[error("User input was not found")]
     NotFound,
+    /// Incompatible configuration: cannot specify non-empty options and message_only.
+    #[error("Can't specify non-empty options and message_only")]
+    ConfigErrorMessageAndOptions,
 }
 
 #[cfg(test)]
@@ -430,6 +460,10 @@ mod rofitest {
             .run()
         {
             Ok(ret) => assert!(ret == "password"),
+            _ => assert!(false),
+        }
+        match Rofi::new_message("A message with no input").run() {
+            Err(Error::Blank) => (), // ok
             _ => assert!(false),
         }
     }
