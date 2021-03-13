@@ -99,6 +99,7 @@ where
     width: Width,
     format: Format,
     args: Vec<String>,
+    sort: bool,
 }
 
 /// Rofi child process.
@@ -185,6 +186,7 @@ where
             width: Width::None,
             format: Format::Text,
             args: Vec::new(),
+            sort: false,
         }
     }
 
@@ -198,6 +200,12 @@ where
     /// function will overwrite any subsequent calls to `self.format`.
     pub fn run_index(&mut self) -> Result<usize, Error> {
         self.spawn_index()?.wait_with_output()
+    }
+
+    /// Set sort flag
+    pub fn set_sort(&mut self) -> &mut Self {
+        self.sort = true;
+        self
     }
 
     /// enable pango markup
@@ -292,6 +300,10 @@ where
                 Width::Percentage(x) => vec!["-width".to_string(), format!("{}", x)],
                 Width::Pixels(x) => vec!["-width".to_string(), format!("{}", x)],
                 Width::Characters(x) => vec!["-width".to_string(), format!("-{}", x)],
+            })
+            .arg(match self.sort {
+                true => "-sort",
+                false => "",
             })
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
