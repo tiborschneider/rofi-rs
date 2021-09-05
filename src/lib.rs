@@ -88,7 +88,7 @@ use thiserror::Error;
 /// multiple times without reconstruction and reallocation. You can choose to
 /// return a handle to the child process `RofiChild`, which allows you to kill
 /// the process.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Rofi<'a, T>
 where
     T: AsRef<str>,
@@ -348,7 +348,7 @@ impl<'a> Rofi<'a, String> {
 }
 
 /// Width of the rofi window to overwrite the default width from the rogi theme.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Width {
     /// No width specified, use the default one from the theme
     None,
@@ -383,7 +383,7 @@ impl Width {
 }
 
 /// Different modes, how rofi should return the results
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Format {
     /// Regular text, including markup
     #[allow(dead_code)]

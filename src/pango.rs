@@ -19,7 +19,7 @@ use std::collections::HashMap;
 use std::fmt;
 
 /// Structure for writing Pango markup spans
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Pango<'a> {
     content: &'a str,
     options: HashMap<&'static str, &'a str>,
@@ -365,7 +365,7 @@ impl<'a> Pango<'a> {
 }
 
 /// Enumeration over all available font families
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum FontFamily {
     /// Normal font
     Normal,
@@ -378,7 +378,7 @@ pub enum FontFamily {
 }
 
 /// Enumeration over all avaliable font sizes
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum FontSize {
     /// Very tiny font size, corresponsds to xx-small
     VeryTiny,
@@ -401,7 +401,7 @@ pub enum FontSize {
 }
 
 /// Enumeration over all possible slant styles
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum SlantStyle {
     /// No slant
     Normal,
@@ -412,7 +412,7 @@ pub enum SlantStyle {
 }
 
 /// Enumeration over all possible weights
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Weight {
     /// Thin weight (=100)
     Thin,
@@ -437,7 +437,7 @@ pub enum Weight {
 }
 
 /// enumeration over all possible font stretch modes
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum FontStretch {
     /// UltraCondensed, letters are extremely close together
     UltraCondensed,
@@ -460,7 +460,7 @@ pub enum FontStretch {
 }
 
 /// enumeration over all possible underline modes
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Underline {
     /// No underline mode
     None,
