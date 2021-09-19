@@ -311,8 +311,14 @@ where
             })
             .args(match self.width {
                 Width::None => vec![],
-                Width::Percentage(x) => vec!["-theme-str".to_string(), format!("window {{width: {}%;}}", x)],
-                Width::Pixels(x) => vec!["-theme-str".to_string(), format!("window {{width: {}px;}}", x)],
+                Width::Percentage(x) => vec![
+                    "-theme-str".to_string(),
+                    format!("window {{width: {}%;}}", x),
+                ],
+                Width::Pixels(x) => vec![
+                    "-theme-str".to_string(),
+                    format!("window {{width: {}px;}}", x),
+                ],
             })
             .arg(match self.sort {
                 true => "-sort",
