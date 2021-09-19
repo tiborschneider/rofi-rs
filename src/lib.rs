@@ -300,7 +300,7 @@ where
             .args(&self.args)
             .arg("-format")
             .arg(self.format.as_arg())
-            .arg("-lines")
+            .arg("-l")
             .arg(match self.lines.as_ref() {
                 Some(s) => format!("{}", s),
                 None => format!("{}", self.elements.len()),
@@ -311,9 +311,8 @@ where
             })
             .args(match self.width {
                 Width::None => vec![],
-                Width::Percentage(x) => vec!["-width".to_string(), format!("{}", x)],
-                Width::Pixels(x) => vec!["-width".to_string(), format!("{}", x)],
-                Width::Characters(x) => vec!["-width".to_string(), format!("-{}", x)],
+                Width::Percentage(x) => vec!["-theme-str".to_string(), format!("window {{width: {}%;}}", x)],
+                Width::Pixels(x) => vec!["-theme-str".to_string(), format!("window {{width: {}px;}}", x)],
             })
             .arg(match self.sort {
                 true => "-sort",
@@ -356,8 +355,6 @@ pub enum Width {
     Percentage(usize),
     /// Width in pixels, must be greater than 100
     Pixels(usize),
-    /// Estimates the width based on the number of characters.
-    Characters(usize),
 }
 
 impl Width {
