@@ -73,6 +73,25 @@
 //!     Err(e) => println!("Error: {}", e)
 //! }
 //! ```
+//!
+//! ## Example of using custom keyboard shortcuts with rofi
+//!
+//! ```
+//! use rofi;
+//! use std::{fs, env};
+//!
+//! let dir_entries = fs::read_dir(env::current_dir().unwrap())
+//!     .unwrap()
+//!     .map(|d| format!("{:?}", d.unwrap().path()))
+//!     .collect::<Vec<String>>();
+//! let mut r = rofi::Rofi::new(&dir_entries);
+//! match r.kb_custom(1, "Alt+n").run() {
+//!     Ok(choice) => println!("Choice: {}", choice),
+//!     Err(rofi::Error::CustomKeyboardShortcut) => println!("exit code: {:?}", r.exit_code()),
+//!     Err(rofi::Error::Interrupted) => println!("Interrupted"),
+//!     Err(e) => println!("Error: {}", e)
+//! }
+//! ```
 
 #![deny(missing_docs, missing_debug_implementations, rust_2018_idioms)]
 
@@ -101,6 +120,7 @@ where
     format: Format,
     args: Vec<String>,
     sort: bool,
+    exit_code: Option<i32>,
 }
 
 /// Rofi child process.
@@ -108,6 +128,7 @@ where
 pub struct RofiChild<T> {
     num_elements: T,
     p: Child,
+    exit_code: Option<i32>,
 }
 
 impl<T> RofiChild<T> {
@@ -115,6 +136,7 @@ impl<T> RofiChild<T> {
         Self {
             num_elements: arg,
             p,
+            exit_code: None,
         }
     }
     /// Kill the Rofi process
@@ -127,6 +149,8 @@ impl RofiChild<String> {
     /// Wait for the result and return the output as a String.
     fn wait_with_output(&mut self) -> Result<String, Error> {
         let status = self.p.wait()?;
+        let code = status.code().unwrap();
+        self.exit_code = Some(code);
         if status.success() {
             let mut buffer = String::new();
             if let Some(mut reader) = self.p.stdout.take() {
@@ -140,6 +164,8 @@ impl RofiChild<String> {
             } else {
                 Ok(buffer)
             }
+        } else if (10..=28).contains(&code) {
+            Err(Error::CustomKeyboardShortcut)
         } else {
             Err(Error::Interrupted {})
         }
@@ -150,6 +176,8 @@ impl RofiChild<usize> {
     /// Wait for the result and return the output as an usize.
     fn wait_with_output(&mut self) -> Result<usize, Error> {
         let status = self.p.wait()?;
+        let code = status.code().unwrap();
+        self.exit_code = Some(code);
         if status.success() {
             let mut buffer = String::new();
             if let Some(mut reader) = self.p.stdout.take() {
@@ -168,6 +196,8 @@ impl RofiChild<usize> {
                     Ok(idx as usize)
                 }
             }
+        } else if (10..=28).contains(&code) {
+            Err(Error::CustomKeyboardShortcut)
         } else {
             Err(Error::Interrupted {})
         }
@@ -189,19 +219,26 @@ where
             args: Vec::new(),
             sort: false,
             message: None,
+            exit_code: None,
         }
     }
 
     /// Show the window, and return the selected string, including pango
     /// formatting if available
-    pub fn run(&self) -> Result<String, Error> {
-        self.spawn()?.wait_with_output()
+    pub fn run(&mut self) -> Result<String, Error> {
+        let mut rofi_child = self.spawn()?;
+        let ret = rofi_child.wait_with_output();
+        self.exit_code = rofi_child.exit_code;
+        ret
     }
 
     /// show the window, and return the index of the selected string This
     /// function will overwrite any subsequent calls to `self.format`.
     pub fn run_index(&mut self) -> Result<usize, Error> {
-        self.spawn_index()?.wait_with_output()
+        let mut rofi_child = self.spawn_index()?;
+        let ret = rofi_child.wait_with_output();
+        self.exit_code = rofi_child.exit_code;
+        ret
     }
 
     /// Set sort flag
@@ -259,6 +296,14 @@ where
         self
     }
 
+    /// Set the message of the rofi window (-mesg). Only available in dmenu mode.
+    /// Docs: <https://github.com/davatorium/rofi/blob/next/doc/rofi-dmenu.5.markdown#dmenu-specific-commandline-flags>
+    pub fn message(&mut self, message: impl Into<String>) -> &mut Self {
+        self.args.push("-mesg".to_string());
+        self.args.push(message.into());
+        self
+    }
+
     /// Set the rofi theme
     /// This will make sure that rofi uses `~/.config/rofi/{theme}.rasi`
     pub fn theme(&mut self, theme: Option<impl Into<String>>) -> &mut Self {
@@ -277,6 +322,13 @@ where
         self
     }
 
+    ///
+    pub fn kb_custom(&mut self, id: u32, shortcut: &str) -> &mut Self {
+        self.args.push(format!("-kb-custom-{}", id));
+        self.args.push(shortcut.to_string());
+        self
+    }
+
     /// Returns a child process with the pre-prepared rofi window
     /// The child will produce the exact output as provided in the elements vector.
     pub fn spawn(&self) -> Result<RofiChild<String>, std::io::Error> {
@@ -289,6 +341,11 @@ where
     pub fn spawn_index(&mut self) -> Result<RofiChild<usize>, std::io::Error> {
         self.format = Format::Index;
         Ok(RofiChild::new(self.spawn_child()?, self.elements.len()))
+    }
+
+    /// Returns the rofi exit code
+    pub fn exit_code(&self) -> Option<i32> {
+        self.exit_code
     }
 
     fn spawn_child(&self) -> Result<Child, std::io::Error> {
@@ -435,6 +492,9 @@ pub enum Error {
     /// Incompatible configuration: cannot specify non-empty options and message_only.
     #[error("Can't specify non-empty options and message_only")]
     ConfigErrorMessageAndOptions,
+    /// User used a custom keyboard shortcut
+    #[error("User used a custom keyboard shortcut")]
+    CustomKeyboardShortcut,
 }
 
 #[cfg(test)]
@@ -445,7 +505,7 @@ mod rofitest {
         let options = vec!["a", "b", "c", "d"];
         let empty_options: Vec<String> = Vec::new();
         match Rofi::new(&options).prompt("choose c").run() {
-            Ok(ret) => assert!(ret == "c"),
+            Ok(ret) => assert!(ret == "c".to_string()),
             _ => assert!(false),
         }
         match Rofi::new(&options).prompt("chose c").run_index() {
@@ -474,11 +534,19 @@ mod rofitest {
             .return_format(Format::UserInput)
             .run()
         {
-            Ok(ret) => assert!(ret == "password"),
+            Ok(ret) => assert!(ret == "password".to_string()),
             _ => assert!(false),
         }
         match Rofi::new_message("A message with no input").run() {
             Err(Error::Blank) => (), // ok
+            _ => assert!(false),
+        }
+
+        let mut r = Rofi::new(&options);
+        match r.message("Press Alt+n").kb_custom(1, "Alt+n").run() {
+            Err(Error::CustomKeyboardShortcut) => {
+                assert_eq!(r.exit_code(), Some(10))
+            }
             _ => assert!(false),
         }
     }
